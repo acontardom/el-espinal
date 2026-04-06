@@ -166,6 +166,55 @@ export async function createMovement(
   return {}
 }
 
+export type FuelActivity = {
+  litrosCargados: number
+  litrosDescargados: number
+  movimientos: TankMovement[]
+}
+
+export async function getMyFuelActivity(userId: string): Promise<FuelActivity> {
+  const supabase = await createClient()
+  const now = new Date()
+  const firstDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  const lastDayStr = `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`
+
+  const [monthRes, recentRes] = await Promise.all([
+    supabase
+      .from('tank_movements')
+      .select('type, liters')
+      .eq('created_by', userId)
+      .gte('movement_date', firstDay)
+      .lte('movement_date', lastDayStr),
+    supabase
+      .from('tank_movements')
+      .select(
+        `id, type, tank_id, machine_id, movement_date, liters, meter_reading,
+         price_per_liter, supplier, invoice_number, notes, created_by, created_at,
+         tank:tanks(id, code, name),
+         machine:machines(id, code, name)`
+      )
+      .eq('created_by', userId)
+      .order('movement_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ])
+
+  const monthMovements = monthRes.data ?? []
+  const litrosCargados = monthMovements
+    .filter((m) => m.type === 'carga')
+    .reduce((sum, m) => sum + (m.liters ?? 0), 0)
+  const litrosDescargados = monthMovements
+    .filter((m) => m.type === 'descarga')
+    .reduce((sum, m) => sum + (m.liters ?? 0), 0)
+
+  return {
+    litrosCargados,
+    litrosDescargados,
+    movimientos: (recentRes.data ?? []) as unknown as TankMovement[],
+  }
+}
+
 export async function getMisMovimientos(
   userId: string,
   limit = 5

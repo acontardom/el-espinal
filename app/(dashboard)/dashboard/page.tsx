@@ -2,7 +2,10 @@ import Link from 'next/link'
 import { Gauge, Fuel, ClipboardList } from 'lucide-react'
 import { getUserProfile } from '@/lib/auth'
 import { getDashboardData, type FleetMachine } from '@/lib/dashboard'
-import { getMisHorometros, type MiHorometro } from '@/lib/horometros'
+import { getMisHorometros, getCumplimiento, type MiHorometro } from '@/lib/horometros'
+import { getMyFuelActivity, type FuelActivity } from '@/lib/combustible'
+import { CumplimientoCalendario } from '@/app/(dashboard)/maquinaria/horometros/components/CumplimientoCalendario'
+import { PanelCombustible } from './components/PanelCombustible'
 import { cn } from '@/lib/utils'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -88,9 +91,13 @@ function KpiCard({
 function DashboardOperador({
   nombre,
   horometros,
+  cumplimiento,
+  fuelActivity,
 }: {
   nombre: string | null
   horometros: MiHorometro[]
+  cumplimiento: string[]
+  fuelActivity: FuelActivity
 }) {
   return (
     <div className="space-y-8">
@@ -133,6 +140,12 @@ function DashboardOperador({
             </p>
           </div>
         </Link>
+      </div>
+
+      {/* Dos columnas: calendario + panel combustible */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <CumplimientoCalendario reportedDates={cumplimiento} days={30} />
+        <PanelCombustible activity={fuelActivity} />
       </div>
 
       {/* Mis últimos horómetros */}
@@ -195,8 +208,19 @@ export default async function DashboardPage() {
 
   // ── Vista operador ──
   if (profile?.role !== 'admin') {
-    const horometros = await getMisHorometros(profile!.id)
-    return <DashboardOperador nombre={profile?.full_name ?? null} horometros={horometros} />
+    const [horometros, cumplimiento, fuelActivity] = await Promise.all([
+      getMisHorometros(profile!.id),
+      getCumplimiento(30),
+      getMyFuelActivity(profile!.id),
+    ])
+    return (
+      <DashboardOperador
+        nombre={profile?.full_name ?? null}
+        horometros={horometros}
+        cumplimiento={cumplimiento}
+        fuelActivity={fuelActivity}
+      />
+    )
   }
 
   // ── Vista admin ──

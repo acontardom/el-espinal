@@ -39,6 +39,27 @@ export async function getHorometros(): Promise<HorometroReporte[]> {
   return (data ?? []) as unknown as HorometroReporte[]
 }
 
+export async function getCumplimiento(days = 30): Promise<string[]> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const desde = new Date()
+  desde.setDate(desde.getDate() - (days - 1))
+  const desdeStr = desde.toISOString().split('T')[0]
+
+  const { data, error } = await supabase
+    .from('hourly_reports')
+    .select('reported_date')
+    .eq('operator_id', user.id)
+    .gte('reported_date', desdeStr)
+
+  if (error) return []
+  return (data ?? []).map((r) => r.reported_date as string)
+}
+
 export type MiHorometro = {
   id: string
   reported_date: string
