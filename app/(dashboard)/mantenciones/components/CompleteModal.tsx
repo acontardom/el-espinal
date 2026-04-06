@@ -14,14 +14,22 @@ import { completeMaintenance, type Maintenance } from '@/lib/mantenciones'
 
 const schema = z.object({
   done_date: z.string().min(1, 'Requerido'),
-  done_hours: z.preprocess(
-    (v) => (v === '' || v === undefined ? undefined : Number(v)),
-    z.number({ required_error: 'Requerido' }).min(0, 'Debe ser ≥ 0')
-  ),
-  cost: z.preprocess(
-    (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
-    z.number().min(0).nullable().optional()
-  ),
+  done_hours: z
+    .any()
+    .transform((v): number => {
+      if (v === '' || v === undefined || v === null) return NaN
+      return Number(v)
+    })
+    .pipe(z.number().min(0, 'Debe ser ≥ 0')),
+  cost: z
+    .any()
+    .transform((v): number | null => {
+      if (v === '' || v === undefined || v === null) return null
+      const n = Number(v)
+      return isNaN(n) ? null : n
+    })
+    .pipe(z.number().min(0).nullable())
+    .optional(),
   provider: z.string().optional(),
   notes: z.string().optional(),
 })

@@ -123,7 +123,7 @@ export async function getMovements(
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
-  return (data ?? []) as TankMovement[]
+  return (data ?? []) as unknown as TankMovement[]
 }
 
 export async function createMovement(

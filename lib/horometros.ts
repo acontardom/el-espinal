@@ -36,7 +36,7 @@ export async function getHorometros(): Promise<HorometroReporte[]> {
     .order('reported_date', { ascending: false })
 
   if (error) throw new Error(error.message)
-  return (data ?? []) as HorometroReporte[]
+  return (data ?? []) as unknown as HorometroReporte[]
 }
 
 export async function getMaquinasActivas(): Promise<MaquinaActiva[]> {

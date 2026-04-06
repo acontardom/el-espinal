@@ -29,10 +29,13 @@ const costTypeConfig: Record<CostType, { label: string; style: string }> = {
 const schema = z.object({
   type: z.enum(['maquinaria_propia', 'subcontrato', 'material', 'combustible', 'otro']),
   description: z.string().min(1, 'Requerido'),
-  amount: z.preprocess(
-    (v) => (v === '' || v == null ? null : Number(v)),
-    z.number().positive('El monto debe ser mayor a 0')
-  ),
+  amount: z
+    .any()
+    .transform((v): number => {
+      if (v === '' || v === undefined || v === null) return NaN
+      return Number(v)
+    })
+    .pipe(z.number().positive('El monto debe ser mayor a 0')),
   date: z.string().min(1, 'Requerido'),
   notes: z.string().nullable().optional(),
 })

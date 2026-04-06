@@ -12,10 +12,15 @@ import { createMaintenance, type MachineOption } from '@/lib/mantenciones'
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
 
-const nullableNum = z.preprocess(
-  (v) => (v === '' || v === undefined || v === null ? null : Number(v)),
-  z.number().min(0).nullable().optional()
-)
+const nullableNum = z
+  .any()
+  .transform((v): number | null => {
+    if (v === '' || v === undefined || v === null) return null
+    const n = Number(v)
+    return isNaN(n) ? null : n
+  })
+  .pipe(z.number().min(0).nullable())
+  .optional()
 
 const schema = z.object({
   machine_id: z.string().min(1, 'Selecciona una máquina'),

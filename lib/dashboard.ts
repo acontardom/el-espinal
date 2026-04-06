@@ -116,7 +116,7 @@ export async function getDashboardData(): Promise<DashboardData> {
 
   // Fleet table: active machines + their next maintenance
   const machines = machinesRes.data ?? []
-  const pendingByMachine = new Map<string, (typeof fleetMaintRes.data)[number]>()
+  const pendingByMachine = new Map<string, NonNullable<typeof fleetMaintRes.data>[number]>()
   for (const m of fleetMaintRes.data ?? []) {
     if (!pendingByMachine.has(m.machine_id)) {
       pendingByMachine.set(m.machine_id, m)
@@ -150,7 +150,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       totalFuelLiters: totalFuel,
     },
     fleet,
-    lastFuelMovements: (fuelMovRes.data ?? []) as FuelMovement[],
-    lastHorometros: (horometrosRes.data ?? []) as HorometroReport[],
+    lastFuelMovements: (fuelMovRes.data ?? []) as unknown as FuelMovement[],
+    lastHorometros: (horometrosRes.data ?? []) as unknown as HorometroReport[],
   }
 }

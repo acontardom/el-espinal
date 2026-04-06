@@ -35,10 +35,15 @@ const milestoneStatusConfig: Record<MilestoneStatus, { label: string; style: str
 const createSchema = z.object({
   name: z.string().min(1, 'Requerido'),
   description: z.string().nullable().optional(),
-  amount: z.preprocess(
-    (v) => (v === '' || v == null ? null : Number(v)),
-    z.number().positive().nullable().optional()
-  ),
+  amount: z
+    .any()
+    .transform((v): number | null => {
+      if (v === '' || v == null) return null
+      const n = Number(v)
+      return isNaN(n) ? null : n
+    })
+    .pipe(z.number().positive().nullable())
+    .optional(),
   due_date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
 })

@@ -78,7 +78,7 @@ export async function getPendingMaintenances(): Promise<Maintenance[]> {
 
   // Sort client-side by urgency: rojo → amarillo → verde
   const urgencyOrder: Record<Urgency, number> = { rojo: 0, amarillo: 1, verde: 2 }
-  return ((data ?? []) as Maintenance[]).sort(
+  return ((data ?? []) as unknown as Maintenance[]).sort(
     (a, b) => urgencyOrder[getUrgency(a)] - urgencyOrder[getUrgency(b)]
   )
 }
@@ -94,7 +94,7 @@ export async function getMaintenances(): Promise<Maintenance[]> {
     .order('done_date', { ascending: false })
 
   if (error) throw new Error(error.message)
-  return (data ?? []) as Maintenance[]
+  return (data ?? []) as unknown as Maintenance[]
 }
 
 export async function getMachinesForMantencion(): Promise<MachineOption[]> {
@@ -174,7 +174,7 @@ export async function checkOverdueMaintenances(): Promise<void> {
   const overdueIds = data
     .filter((m) => {
       const byDate = m.scheduled_date && m.scheduled_date < today
-      const currentHours = (m.machine as { current_hours: number | null } | null)?.current_hours ?? 0
+      const currentHours = (m.machine as unknown as { current_hours: number | null } | null)?.current_hours ?? 0
       const byHours = m.scheduled_hours != null && currentHours >= m.scheduled_hours
       return byDate || byHours
     })

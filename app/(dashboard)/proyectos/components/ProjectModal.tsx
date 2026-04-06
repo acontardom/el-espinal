@@ -23,10 +23,15 @@ const schema = z.object({
   type: z.string().min(1, 'El tipo es requerido'),
   status: z.enum(['cotizacion', 'activo', 'pausado', 'terminado', 'cancelado']),
   contract_type: z.enum(['precio_fijo', 'por_hitos']).nullable().optional(),
-  contract_amount: z.preprocess(
-    (v) => (v === '' || v == null ? null : Number(v)),
-    z.number().positive().nullable().optional()
-  ),
+  contract_amount: z
+    .any()
+    .transform((v): number | null => {
+      if (v === '' || v == null) return null
+      const n = Number(v)
+      return isNaN(n) ? null : n
+    })
+    .pipe(z.number().positive().nullable())
+    .optional(),
   client_id: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   start_date: z.string().nullable().optional(),
