@@ -148,6 +148,93 @@ type Props = {
   currentYear: number
 }
 
+// ─── Vista operador ───────────────────────────────────────────────────────────
+
+function VistaOperador({
+  movements,
+  tanks,
+  machines,
+}: {
+  movements: TankMovement[]
+  tanks: Tank[]
+  machines: MachineOption[]
+}) {
+  const [modalOpen, setModalOpen] = useState(false)
+
+  return (
+    <>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-zinc-900">Registrar combustible</h1>
+          <p className="mt-0.5 text-sm text-zinc-500">Registra cargas y descargas de estanques</p>
+        </div>
+        <Button onClick={() => setModalOpen(true)}>
+          <Plus size={15} />
+          Nuevo movimiento
+        </Button>
+      </div>
+
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-zinc-900">Mis últimos movimientos</h2>
+        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          {movements.length === 0 ? (
+            <div className="py-14 text-center text-sm text-zinc-400">
+              Aún no has registrado movimientos.
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 bg-zinc-50 text-left">
+                  <th className="px-4 py-3 font-medium text-zinc-600">Fecha</th>
+                  <th className="px-4 py-3 font-medium text-zinc-600">Tipo</th>
+                  <th className="px-4 py-3 font-medium text-zinc-600">Estanque</th>
+                  <th className="px-4 py-3 font-medium text-zinc-600">Máquina</th>
+                  <th className="px-4 py-3 text-right font-medium text-zinc-600">Litros</th>
+                  <th className="px-4 py-3 text-right font-medium text-zinc-600">Medidor</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {movements.map((m) => (
+                  <tr key={m.id} className="hover:bg-zinc-50">
+                    <td className="px-4 py-3 tabular-nums text-zinc-700">
+                      {formatFecha(m.movement_date)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <MovementBadge type={m.type} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-xs text-zinc-400">{m.tank?.code}</span>{' '}
+                      <span className="text-zinc-700">{m.tank?.name}</span>
+                    </td>
+                    <td className="px-4 py-3 text-zinc-600">
+                      {m.machine
+                        ? `${m.machine.code} — ${m.machine.name}`
+                        : <span className="text-zinc-300">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums font-medium text-zinc-900">
+                      {fmt(m.liters, 1)}
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-zinc-600">
+                      {fmt(m.meter_reading, 1)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </section>
+
+      <MovementModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        tanks={tanks}
+        machines={machines}
+      />
+    </>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function CombustibleClient({
@@ -159,6 +246,11 @@ export function CombustibleClient({
   currentYear,
 }: Props) {
   const router = useRouter()
+
+  // Vista operador
+  if (!isAdmin) {
+    return <VistaOperador movements={movements} tanks={tanks} machines={machines} />
+  }
 
   const [activeTab, setActiveTab] = useState<'estanques' | 'movimientos'>('estanques')
   const [tankModalOpen, setTankModalOpen] = useState(false)

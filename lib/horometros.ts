@@ -39,6 +39,28 @@ export async function getHorometros(): Promise<HorometroReporte[]> {
   return (data ?? []) as unknown as HorometroReporte[]
 }
 
+export type MiHorometro = {
+  id: string
+  reported_date: string
+  hours_reading: number
+  machine: { code: string; name: string } | null
+}
+
+export async function getMisHorometros(
+  userId: string,
+  limit = 5
+): Promise<MiHorometro[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('hourly_reports')
+    .select('id, reported_date, hours_reading, machine:machines(code, name)')
+    .eq('operator_id', userId)
+    .order('reported_date', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(error.message)
+  return (data ?? []) as unknown as MiHorometro[]
+}
+
 export async function getMaquinasActivas(): Promise<MaquinaActiva[]> {
   const supabase = await createClient()
 

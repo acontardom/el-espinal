@@ -1,4 +1,8 @@
+import Link from 'next/link'
+import { Gauge, Fuel, ClipboardList } from 'lucide-react'
+import { getUserProfile } from '@/lib/auth'
 import { getDashboardData, type FleetMachine } from '@/lib/dashboard'
+import { getMisHorometros, type MiHorometro } from '@/lib/horometros'
 import { cn } from '@/lib/utils'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -15,7 +19,7 @@ function formatFecha(d: string) {
   return `${day}/${m}/${y}`
 }
 
-// ─── Fleet urgency (inline — shape differs from lib/urgency's Maintenance) ───
+// ─── Fleet urgency ────────────────────────────────────────────────────────────
 
 type FleetUrgency = 'rojo' | 'amarillo' | 'verde'
 
@@ -79,9 +83,123 @@ function KpiCard({
   )
 }
 
+// ─── Dashboard Operador ───────────────────────────────────────────────────────
+
+function DashboardOperador({
+  nombre,
+  horometros,
+}: {
+  nombre: string | null
+  horometros: MiHorometro[]
+}) {
+  return (
+    <div className="space-y-8">
+      {/* Saludo */}
+      <div>
+        <h1 className="text-2xl font-semibold text-zinc-900">
+          Bienvenido{nombre ? `, ${nombre}` : ''}
+        </h1>
+        <p className="mt-0.5 text-sm text-zinc-500">¿Qué necesitas registrar hoy?</p>
+      </div>
+
+      {/* Acciones rápidas */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Link
+          href="/maquinaria/horometros"
+          className="group flex items-center gap-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:border-zinc-300 hover:shadow-md"
+        >
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-white group-hover:bg-zinc-700 transition-colors">
+            <Gauge size={28} strokeWidth={1.5} />
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-zinc-900">Registrar horómetro</p>
+            <p className="mt-0.5 text-sm text-zinc-500">
+              Reporta las horas actuales de una máquina
+            </p>
+          </div>
+        </Link>
+
+        <Link
+          href="/combustible"
+          className="group flex items-center gap-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:border-zinc-300 hover:shadow-md"
+        >
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-white group-hover:bg-zinc-700 transition-colors">
+            <Fuel size={28} strokeWidth={1.5} />
+          </div>
+          <div>
+            <p className="text-lg font-semibold text-zinc-900">Registrar combustible</p>
+            <p className="mt-0.5 text-sm text-zinc-500">
+              Registra cargas y descargas de estanques
+            </p>
+          </div>
+        </Link>
+      </div>
+
+      {/* Mis últimos horómetros */}
+      <section>
+        <div className="mb-3 flex items-center gap-2">
+          <ClipboardList size={16} className="text-zinc-400" strokeWidth={1.5} />
+          <h2 className="text-base font-semibold text-zinc-900">Mis últimos reportes</h2>
+        </div>
+
+        {horometros.length === 0 ? (
+          <div className="rounded-xl border border-zinc-200 bg-white py-12 text-center">
+            <p className="text-sm text-zinc-400">Aún no has registrado horómetros.</p>
+            <Link
+              href="/maquinaria/horometros"
+              className="mt-3 inline-block text-sm font-medium text-zinc-700 underline underline-offset-2 hover:text-zinc-900"
+            >
+              Registrar el primero
+            </Link>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 bg-zinc-50 text-left">
+                  <th className="px-4 py-3 font-medium text-zinc-600">Fecha</th>
+                  <th className="px-4 py-3 font-medium text-zinc-600">Máquina</th>
+                  <th className="px-4 py-3 text-right font-medium text-zinc-600">Horas</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {horometros.map((r) => (
+                  <tr key={r.id} className="hover:bg-zinc-50">
+                    <td className="px-4 py-3 tabular-nums text-zinc-600">
+                      {formatFecha(r.reported_date)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-xs text-zinc-400">
+                        {r.machine?.code}
+                      </span>{' '}
+                      <span className="text-zinc-900">{r.machine?.name ?? '—'}</span>
+                    </td>
+                    <td className="px-4 py-3 text-right tabular-nums font-medium text-zinc-900">
+                      {fmt(r.hours_reading, 1)} h
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
+  const profile = await getUserProfile()
+
+  // ── Vista operador ──
+  if (profile?.role !== 'admin') {
+    const horometros = await getMisHorometros(profile!.id)
+    return <DashboardOperador nombre={profile?.full_name ?? null} horometros={horometros} />
+  }
+
+  // ── Vista admin ──
   const { kpi, fleet, lastFuelMovements, lastHorometros } = await getDashboardData()
 
   return (
@@ -91,7 +209,7 @@ export default async function DashboardPage() {
         <p className="mt-0.5 text-sm text-zinc-500">Resumen general del sistema</p>
       </div>
 
-      {/* ── KPI row ── */}
+      {/* KPI row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard label="Flota activa" value={kpi.activeFleet} unit="máquinas" />
         <KpiCard label="Mantenciones pendientes" value={kpi.pendingMaintenances} />
@@ -107,14 +225,12 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {/* ── Fleet status ── */}
+      {/* Fleet status */}
       <section>
         <h2 className="mb-3 text-base font-semibold text-zinc-900">Estado de flota</h2>
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
           {fleet.length === 0 ? (
-            <p className="py-10 text-center text-sm text-zinc-400">
-              No hay máquinas activas.
-            </p>
+            <p className="py-10 text-center text-sm text-zinc-400">No hay máquinas activas.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -132,16 +248,10 @@ export default async function DashboardPage() {
                   const m = machine.nextMaintenance
                   return (
                     <tr key={machine.id} className="hover:bg-zinc-50">
-                      <td className="px-4 py-3 font-mono text-xs text-zinc-500">
-                        {machine.code}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-zinc-900">
-                        {machine.name}
-                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-zinc-500">{machine.code}</td>
+                      <td className="px-4 py-3 font-medium text-zinc-900">{machine.name}</td>
                       <td className="px-4 py-3 text-right tabular-nums text-zinc-700">
-                        {machine.current_hours != null
-                          ? `${fmt(machine.current_hours, 1)} h`
-                          : '—'}
+                        {machine.current_hours != null ? `${fmt(machine.current_hours, 1)} h` : '—'}
                       </td>
                       <td className="px-4 py-3 text-zinc-600">
                         {m ? (
@@ -174,9 +284,8 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* ── Bottom grid ── */}
+      {/* Bottom grid */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Last fuel movements */}
         <section>
           <h2 className="mb-3 text-base font-semibold text-zinc-900">
             Últimos movimientos de combustible
@@ -216,7 +325,6 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        {/* Last hourly reports */}
         <section>
           <h2 className="mb-3 text-base font-semibold text-zinc-900">
             Últimos reportes de horómetros
@@ -229,12 +337,8 @@ export default async function DashboardPage() {
                 {lastHorometros.map((r) => (
                   <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-3">
                     <div>
-                      <p className="text-sm font-medium text-zinc-900">
-                        {r.machine?.name ?? '—'}
-                      </p>
-                      <p className="text-xs text-zinc-400">
-                        {r.operator?.full_name ?? '—'}
-                      </p>
+                      <p className="text-sm font-medium text-zinc-900">{r.machine?.name ?? '—'}</p>
+                      <p className="text-xs text-zinc-400">{r.operator?.full_name ?? '—'}</p>
                     </div>
                     <div className="text-right">
                       <p className="tabular-nums text-sm font-medium text-zinc-900">

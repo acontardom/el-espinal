@@ -166,6 +166,27 @@ export async function createMovement(
   return {}
 }
 
+export async function getMisMovimientos(
+  userId: string,
+  limit = 5
+): Promise<TankMovement[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('tank_movements')
+    .select(
+      `id, type, tank_id, machine_id, movement_date, liters, meter_reading,
+       price_per_liter, supplier, invoice_number, notes, created_by, created_at,
+       tank:tanks(id, code, name),
+       machine:machines(id, code, name)`
+    )
+    .eq('created_by', userId)
+    .order('movement_date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw new Error(error.message)
+  return (data ?? []) as unknown as TankMovement[]
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 export async function getMachinesForCombustible(): Promise<MachineOption[]> {

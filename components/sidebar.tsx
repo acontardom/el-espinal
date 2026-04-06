@@ -22,18 +22,23 @@ type NavItem = {
   label: string
   icon: React.ComponentType<{ size?: number; strokeWidth?: number }>
   indent: boolean
-  adminOnly: boolean
 }
 
-const navItems: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, indent: false, adminOnly: false },
-  { href: '/maquinaria', label: 'Maquinaria', icon: Truck, indent: false, adminOnly: true },
-  { href: '/maquinaria/horometros', label: 'Horómetros', icon: Gauge, indent: true, adminOnly: false },
-  { href: '/combustible', label: 'Combustible', icon: Fuel, indent: false, adminOnly: true },
-  { href: '/mantenciones', label: 'Mantenciones', icon: Wrench, indent: false, adminOnly: true },
-  { href: '/proyectos', label: 'Proyectos', icon: FolderKanban, indent: false, adminOnly: true },
-  { href: '/clientes', label: 'Clientes', icon: Users, indent: false, adminOnly: true },
-  { href: '/calendario', label: 'Calendario', icon: CalendarDays, indent: false, adminOnly: true },
+const adminNavItems: NavItem[] = [
+  { href: '/dashboard',             label: 'Dashboard',            icon: LayoutDashboard, indent: false },
+  { href: '/maquinaria',            label: 'Maquinaria',           icon: Truck,           indent: false },
+  { href: '/maquinaria/horometros', label: 'Horómetros',           icon: Gauge,           indent: true  },
+  { href: '/combustible',           label: 'Combustible',          icon: Fuel,            indent: false },
+  { href: '/mantenciones',          label: 'Mantenciones',         icon: Wrench,          indent: false },
+  { href: '/proyectos',             label: 'Proyectos',            icon: FolderKanban,    indent: false },
+  { href: '/clientes',              label: 'Clientes',             icon: Users,           indent: false },
+  { href: '/calendario',            label: 'Calendario',           icon: CalendarDays,    indent: false },
+]
+
+const operadorNavItems: NavItem[] = [
+  { href: '/dashboard',             label: 'Dashboard',            icon: LayoutDashboard, indent: false },
+  { href: '/maquinaria/horometros', label: 'Horómetros',           icon: Gauge,           indent: false },
+  { href: '/combustible',           label: 'Registrar combustible', icon: Fuel,           indent: false },
 ]
 
 type Props = {
@@ -43,8 +48,7 @@ type Props = {
 export function Sidebar({ role }: Props) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
-  const isAdmin = role === 'admin'
-  const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin)
+  const navItems = role === 'admin' ? adminNavItems : operadorNavItems
 
   return (
     <>
@@ -83,7 +87,7 @@ export function Sidebar({ role }: Props) {
         {/* Navegación */}
         <nav className="flex-1 overflow-y-auto p-3">
           <ul className="space-y-0.5">
-            {visibleItems.map(({ href, label, icon: Icon, indent }) => {
+            {navItems.map(({ href, label, icon: Icon, indent }) => {
               const active = pathname === href || pathname.startsWith(href + '/')
               return (
                 <li key={href}>
