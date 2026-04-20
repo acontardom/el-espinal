@@ -27,7 +27,7 @@ const machineStatusStyle: Record<string, string> = {
 
 const schema = z.object({
   machine_id: z.string().min(1, 'Seleccione una máquina'),
-  assigned_date: z.string().min(1, 'Requerido'),
+  start_date: z.string().min(1, 'Requerido'),
   end_date: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
 })
@@ -59,20 +59,20 @@ export function TabMaquinaria({ machines, machineOptions, projectId }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { assigned_date: new Date().toISOString().split('T')[0] },
+    defaultValues: { start_date: new Date().toISOString().split('T')[0] },
   })
 
   async function onSubmit(data: FormData) {
     const res = await assignMachine({
       project_id: projectId,
       machine_id: data.machine_id,
-      assigned_date: data.assigned_date,
+      start_date: data.start_date,
       end_date: data.end_date || null,
       notes: data.notes || null,
     })
     if (res.error) { setError('root', { message: res.error }); return }
     setCreateOpen(false)
-    reset({ assigned_date: new Date().toISOString().split('T')[0] })
+    reset({ start_date: new Date().toISOString().split('T')[0] })
   }
 
   async function handleRemove(id: string) {
@@ -132,7 +132,7 @@ export function TabMaquinaria({ machines, machineOptions, projectId }: Props) {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-zinc-600">{formatFecha(pm.assigned_date)}</td>
+                    <td className="px-4 py-3 tabular-nums text-zinc-600">{formatFecha(pm.start_date)}</td>
                     <td className="px-4 py-3 tabular-nums text-zinc-500">{formatFecha(pm.end_date)}</td>
                     <td className="px-4 py-3">
                       <button
@@ -177,8 +177,8 @@ export function TabMaquinaria({ machines, machineOptions, projectId }: Props) {
                   <label className="mb-1.5 block text-sm font-medium text-zinc-700">
                     Fecha asignación <span className="text-red-500">*</span>
                   </label>
-                  <input {...register('assigned_date')} type="date" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200" />
-                  {errors.assigned_date && <p className="mt-1 text-xs text-red-600">{errors.assigned_date.message}</p>}
+                  <input {...register('start_date')} type="date" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200" />
+                  {errors.start_date && <p className="mt-1 text-xs text-red-600">{errors.start_date.message}</p>}
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-zinc-700">Fecha retiro</label>

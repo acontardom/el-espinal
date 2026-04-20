@@ -19,8 +19,19 @@
 | @hookform/resolvers | ^5.2.2 |
 | lucide-react | ^1.7.0 |
 | class-variance-authority | ^0.7.1 |
+| clsx | ^2.1.1 |
+| tailwind-merge | ^3.5.0 |
 
 **Importante:** Este es Next.js 16, NO Next.js 14. Las APIs pueden diferir del conocimiento de entrenamiento. Revisar `node_modules/next/dist/docs/` ante dudas.
+
+---
+
+## Deploy
+
+- **Plataforma:** Vercel + GitHub
+- **CI/CD:** Push a `main` → deploy automático en Vercel
+- **Variables de entorno en Vercel:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Variables locales:** `.env.local` (mismo par de variables)
 
 ---
 
@@ -29,79 +40,91 @@
 ```
 maquinaria-app/
 ├── app/
-│   ├── (auth)/
-│   │   ├── layout.tsx              ← centra contenido en pantalla
-│   │   └── login/
-│   │       └── page.tsx            ← formulario email+password, 'use client'
-│   ├── (dashboard)/
-│   │   ├── layout.tsx              ← verifica sesión, sidebar + header
-│   │   ├── dashboard/
-│   │   │   └── page.tsx            ← KPIs, flota, últimos movimientos
-│   │   ├── maquinaria/
-│   │   │   ├── page.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── MachineTable.tsx
-│   │   │   │   └── MachineModal.tsx
-│   │   │   └── horometros/
-│   │   │       ├── page.tsx
-│   │   │       └── components/
-│   │   │           ├── HorometroTable.tsx
-│   │   │           └── HorometroForm.tsx
-│   │   ├── combustible/
-│   │   │   ├── page.tsx            ← acepta searchParams: mes, anio
-│   │   │   └── components/
-│   │   │       ├── CombustibleClient.tsx
-│   │   │       ├── TankModal.tsx
-│   │   │       └── MovementModal.tsx
-│   │   ├── mantenciones/
-│   │   │   ├── page.tsx
-│   │   │   └── components/
-│   │   │       ├── MantencionesClient.tsx
-│   │   │       ├── MaintenanceModal.tsx
-│   │   │       └── CompleteModal.tsx
-│   │   ├── clientes/
-│   │   │   ├── page.tsx
-│   │   │   ├── components/
-│   │   │   │   ├── ClientesClient.tsx
-│   │   │   │   └── ClientModal.tsx
-│   │   │   └── [id]/
-│   │   │       ├── page.tsx                    ← detalle cliente + proyectos
-│   │   │       └── ClientDetailClient.tsx      ← botón editar
-│   │   └── proyectos/
-│   │       ├── page.tsx
-│   │       ├── components/
-│   │       │   ├── ProyectosClient.tsx         ← tabla con tabs Activos/Cotizaciones/etc.
-│   │       │   └── ProjectModal.tsx
-│   │       └── [id]/
-│   │           ├── page.tsx                    ← detalle proyecto
-│   │           └── components/
-│   │               ├── ProyectoDetailClient.tsx ← tabs Resumen/Hitos/Costos/Maquinaria
-│   │               ├── TabHitos.tsx
-│   │               ├── TabCostos.tsx
-│   │               └── TabMaquinaria.tsx
 │   ├── globals.css
-│   ├── layout.tsx                  ← root layout con fuentes Geist
-│   └── page.tsx                    ← redirect('/dashboard')
+│   ├── layout.tsx                          ← root layout con fuentes Geist
+│   ├── page.tsx                            ← redirect('/dashboard')
+│   ├── (auth)/
+│   │   ├── layout.tsx                      ← centra contenido en pantalla
+│   │   └── login/
+│   │       └── page.tsx                    ← formulario email+password, 'use client'
+│   └── (dashboard)/
+│       ├── layout.tsx                      ← verifica sesión, sidebar + header
+│       ├── dashboard/
+│       │   ├── page.tsx                    ← bifurca admin vs operador, getDashboardData / getMisHorometros + getCumplimiento + getMyFuelActivity
+│       │   └── components/
+│       │       └── PanelCombustible.tsx    ← resumen mensual de combustible para operador
+│       ├── maquinaria/
+│       │   ├── page.tsx
+│       │   ├── components/
+│       │   │   ├── MachineTable.tsx
+│       │   │   └── MachineModal.tsx
+│       │   └── horometros/
+│       │       ├── page.tsx
+│       │       └── components/
+│       │           ├── HorometroTable.tsx
+│       │           ├── HorometroForm.tsx   ← usa browser Supabase client (operadores reportan desde browser)
+│       │           └── CumplimientoCalendario.tsx  ← heatmap 30 días, 'use client'
+│       ├── combustible/
+│       │   ├── page.tsx                    ← acepta searchParams: mes, anio; bifurca admin/operador
+│       │   └── components/
+│       │       ├── CombustibleClient.tsx   ← admin: estanques + movimientos + factura; operador: solo mis movimientos
+│       │       ├── TankModal.tsx
+│       │       ├── MovementModal.tsx       ← carga: estanque+fecha+litros+foto factura; descarga: estanque+máquina+fecha+litros
+│       │       └── ImageLightbox.tsx       ← lightbox para facturas (click fuera o Escape cierra)
+│       ├── mantenciones/
+│       │   ├── page.tsx
+│       │   └── components/
+│       │       ├── MantencionesClient.tsx
+│       │       ├── MaintenanceModal.tsx
+│       │       └── CompleteModal.tsx
+│       ├── clientes/
+│       │   ├── page.tsx
+│       │   ├── components/
+│       │   │   ├── ClientesClient.tsx
+│       │   │   └── ClientModal.tsx
+│       │   └── [id]/
+│       │       ├── page.tsx                ← detalle cliente + proyectos asociados
+│       │       └── ClientDetailClient.tsx
+│       ├── proyectos/
+│       │   ├── page.tsx
+│       │   ├── components/
+│       │   │   ├── ProyectosClient.tsx     ← tabla con tabs Activos/Cotizaciones/etc.
+│       │   │   └── ProjectModal.tsx
+│       │   └── [id]/
+│       │       ├── page.tsx                ← fetch project + machineOptions + clients + profile + documents
+│       │       └── components/
+│       │           ├── ProyectoDetailClient.tsx  ← tabs: Resumen / Hitos / Costos / Maquinaria / Archivos (admin)
+│       │           ├── TabHitos.tsx
+│       │           ├── TabCostos.tsx
+│       │           ├── TabMaquinaria.tsx
+│       │           ├── ArchivosTab.tsx     ← upload documentos (PDF) y fotos; elimina de Storage + DB
+│       │           └── PhotoLightbox.tsx   ← lightbox con prev/next, nombre y fecha
+│       └── calendario/
+│           ├── page.tsx
+│           └── components/
+│               └── CalendarioClient.tsx    ← Gantt mensual, navegación sin page reload vía startTransition
 ├── components/
-│   ├── sidebar.tsx                 ← 'use client', recibe prop role
+│   ├── sidebar.tsx                         ← 'use client', recibe prop role
 │   └── ui/
-│       └── button.tsx              ← @base-ui/react Button con CVA
+│       └── button.tsx                      ← @base-ui/react Button con CVA
 ├── lib/
 │   ├── supabase/
-│   │   ├── client.ts               ← createBrowserClient (browser)
-│   │   └── server.ts               ← createServerClient con cookies
-│   ├── auth.ts                     ← getUser(), getUserProfile(), logout()
-│   ├── machines.ts                 ← 'use server', CRUD máquinas
-│   ├── horometros.ts               ← 'use server', reportes + máquinas activas
-│   ├── combustible.ts              ← 'use server', estanques + movimientos
-│   ├── mantenciones.ts             ← 'use server', mantenciones + check vencidas
-│   ├── urgency.ts                  ← utilitario puro (sin 'use server')
-│   ├── dashboard.ts                ← getDashboardData() con Promise.all x7
-│   ├── clientes.ts                 ← 'use server', CRUD clientes (createClientRecord/updateClientRecord para no colisionar con createClient de Supabase)
-│   ├── proyectos.ts                ← 'use server', CRUD proyectos + hitos + costos + asignación de maquinaria
-│   └── utils.ts                    ← cn() = clsx + tailwind-merge
-├── middleware.ts                   ← refresco sesión, guard de rutas
-└── .env.local                      ← NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+│   │   ├── client.ts                       ← createBrowserClient (browser / uploads)
+│   │   └── server.ts                       ← createServerClient con cookies (Server Components / Actions)
+│   ├── auth.ts                             ← getUser(), getUserProfile(), logout()
+│   ├── machines.ts                         ← 'use server', CRUD máquinas
+│   ├── horometros.ts                       ← 'use server', reportes + getCumplimiento + getMisHorometros
+│   ├── combustible.ts                      ← 'use server', estanques + movimientos + getMyFuelActivity
+│   ├── mantenciones.ts                     ← 'use server', mantenciones + checkOverdueMaintenances
+│   ├── proyectos.ts                        ← 'use server', CRUD proyectos + hitos + costos + maquinaria asignada
+│   ├── clientes.ts                         ← 'use server', CRUD clientes (createClientRecord/updateClientRecord)
+│   ├── calendario.ts                       ← 'use server', getCalendarioData(month, year)
+│   ├── documentos.ts                       ← 'use server', getDocuments + createDocumentRecord + deleteDocument
+│   ├── dashboard.ts                        ← getDashboardData() con Promise.all x7
+│   ├── urgency.ts                          ← utilitario puro SIN 'use server' — getUrgency(m)
+│   └── utils.ts                            ← cn() = clsx + tailwind-merge
+├── middleware.ts                           ← refresco sesión, guard de rutas
+└── .env.local                              ← NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 
 ---
@@ -111,14 +134,17 @@ maquinaria-app/
 | Módulo | Ruta | Estado |
 |---|---|---|
 | Autenticación | `/login` | ✅ Completo |
-| Dashboard | `/dashboard` | ✅ Completo |
+| Dashboard — admin | `/dashboard` (role=admin) | ✅ Completo |
+| Dashboard — operador | `/dashboard` (role=operador) | ✅ Completo |
 | Maquinaria — registro | `/maquinaria` | ✅ Completo |
 | Horómetros | `/maquinaria/horometros` | ✅ Completo |
-| Combustible | `/combustible` | ✅ Completo |
+| Combustible — admin | `/combustible` (role=admin) | ✅ Completo |
+| Combustible — operador | `/combustible` (role=operador) | ✅ Completo |
 | Mantenciones | `/mantenciones` | ✅ Completo |
 | Clientes | `/clientes`, `/clientes/[id]` | ✅ Completo |
-| Proyectos | `/proyectos`, `/proyectos/[id]` | ✅ Completo |
-| Calendario operativo | — | ⏳ Pendiente |
+| Proyectos — lista | `/proyectos` | ✅ Completo |
+| Proyectos — detalle | `/proyectos/[id]` (Resumen, Hitos, Costos, Maquinaria, Archivos) | ✅ Completo |
+| Calendario operativo | `/calendario` | ✅ Completo |
 
 ---
 
@@ -191,9 +217,10 @@ tank_movements
   movement_date date
   liters numeric
   meter_reading numeric?
-  price_per_liter numeric?  (solo cargas)
-  supplier text?             (solo cargas)
-  invoice_number text?       (solo cargas)
+  price_per_liter numeric?
+  supplier text?
+  invoice_number text?
+  invoice_image_url text?    ← URL pública en bucket 'facturas' (solo cargas con foto)
   notes text?
   created_by uuid → profiles.id
   created_at timestamptz
@@ -213,7 +240,7 @@ projects
   id uuid
   code text (unique)
   name text
-  type text
+  type text  → 'destronque' | 'preparacion_suelo' | 'tranque' | 'obra_civil' | 'mixto'
   status text  → 'cotizacion' | 'activo' | 'pausado' | 'terminado' | 'cancelado'
   contract_type text?  → 'precio_fijo' | 'por_hitos'
   contract_amount numeric?
@@ -244,7 +271,7 @@ project_costs
   type text  → 'maquinaria_propia' | 'subcontrato' | 'material' | 'combustible' | 'otro'
   description text
   amount numeric
-  date date
+  cost_date date          ← campo es cost_date, NO date
   notes text?
   created_at timestamptz
 
@@ -252,14 +279,70 @@ project_machines
   id uuid
   project_id uuid → projects.id
   machine_id uuid → machines.id
-  assigned_date date
+  start_date date         ← campo es start_date, NO assigned_date
   end_date date?
   notes text?
   created_at timestamptz
+
+project_documents
+  id uuid
+  project_id uuid → projects.id
+  name text
+  file_url text           ← URL pública en bucket 'project-files'
+  file_type text          ← MIME type (application/pdf, image/jpeg, etc.)
+  category text  → 'documento' | 'foto'
+  size_bytes bigint?
+  uploaded_by uuid → profiles.id
+  created_at timestamptz
+```
+
+### SQL para crear project_documents
+
+```sql
+CREATE TABLE project_documents (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id uuid REFERENCES projects(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  file_url text NOT NULL,
+  file_type text NOT NULL,
+  category text NOT NULL CHECK (category IN ('documento', 'foto')),
+  size_bytes bigint,
+  uploaded_by uuid REFERENCES profiles(id),
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE project_documents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "auth users" ON project_documents FOR ALL USING (auth.uid() IS NOT NULL);
+```
+
+### SQL para agregar invoice_image_url a tank_movements
+
+```sql
+ALTER TABLE tank_movements ADD COLUMN IF NOT EXISTS invoice_image_url text;
 ```
 
 ### RLS
-Todas las tablas tienen RLS activado. Las policies usan `auth.uid() is not null` para acceso general. La tabla `profiles` tuvo un problema histórico con policies recursivas — usar `auth.jwt()` para leer roles, no hacer SELECT a profiles dentro de una policy de profiles.
+
+Todas las tablas tienen RLS activado. Las policies usan `auth.uid() is not null` para acceso general. La tabla `profiles` tuvo un problema histórico con policies recursivas — usar `auth.jwt()` para leer roles, **no** hacer SELECT a profiles dentro de una policy de profiles.
+
+**Problema histórico con JWT:** PostgREST interpreta el claim `role` del JWT como DB role. Solución: renombrar el claim a `app_role` en el custom JWT hook de Supabase.
+
+---
+
+## Supabase Storage — Buckets
+
+| Bucket | Uso | Acceso |
+|---|---|---|
+| `facturas` | Fotos de facturas de carga de combustible. Ruta: `facturas/{timestamp}_{random}.{ext}` | Público |
+| `project-files` | Documentos (PDF) y fotos de proyectos. Rutas: `{project_id}/documentos/{timestamp}_{filename}` y `{project_id}/fotos/{timestamp}_{filename}` | Público |
+
+**Upload siempre desde el browser** (Client Component con `createClient` de `@/lib/supabase/client`). Luego se llama a un Server Action para insertar el registro en la DB.
+
+**Delete:** El Server Action `deleteDocument` extrae el path desde la URL pública:
+```typescript
+const marker = '/storage/v1/object/public/project-files/'
+const storagePath = fileUrl.slice(fileUrl.indexOf(marker) + marker.length)
+await supabase.storage.from('project-files').remove([storagePath])
+```
 
 ---
 
@@ -267,19 +350,27 @@ Todas las tablas tienen RLS activado. Las policies usan `auth.uid() is not null`
 
 | Funcionalidad | admin | operador |
 |---|---|---|
-| Ver Dashboard | ✅ | ✅ |
-| Ver Maquinaria (solo lectura) | ✅ | ❌ (no aparece en sidebar) |
+| Ver Dashboard | ✅ (KPIs + flota + movimientos) | ✅ (cumplimiento + combustible propio) |
+| Ver Maquinaria | ✅ | ❌ |
 | Crear/editar máquinas | ✅ | ❌ |
 | Ver y registrar Horómetros | ✅ | ✅ |
-| Ver Combustible | ✅ | ❌ |
-| Registrar movimientos combustible | ✅ | ❌ |
+| Ver Combustible completo | ✅ | ❌ |
+| Registrar movimientos combustible | ✅ | ✅ (solo sus propios) |
 | Crear/editar estanques | ✅ | ❌ |
 | Ver Mantenciones | ✅ | ❌ |
 | Crear/completar mantenciones | ✅ | ❌ |
-| Ver Proyectos y Clientes | ✅ | ❌ |
-| Crear/editar proyectos y clientes | ✅ | ❌ |
+| Ver Clientes | ✅ | ❌ |
+| Crear/editar clientes | ✅ | ❌ |
+| Ver Proyectos | ✅ | ❌ |
+| Crear/editar proyectos | ✅ | ❌ |
+| Tab Archivos en proyectos | ✅ | ❌ |
+| Ver Calendario | ✅ | ❌ |
 
-**Implementación:** El rol se obtiene desde `profiles.role` vía `getUserProfile()` en cada Server Component que lo necesita. Se pasa como prop `isAdmin: boolean` a los Client Components. El `Sidebar` recibe `role` como prop desde el layout del dashboard.
+**Implementación:**
+- El rol se obtiene desde `profiles.role` vía `getUserProfile()` en cada Server Component que lo necesita.
+- Se pasa como prop `isAdmin: boolean` a los Client Components.
+- El `Sidebar` recibe `role` como prop desde el layout del dashboard.
+- Dos arrays de `navItems` separados: `adminNavItems` (8 items) y `operadorNavItems` (3 items).
 
 ---
 
@@ -288,7 +379,7 @@ Todas las tablas tienen RLS activado. Las policies usan `auth.uid() is not null`
 ### 1. Server Component + Client Component split
 
 ```
-page.tsx (Server) — fetch data
+page.tsx (Server) — fetch data, getUserProfile → isAdmin
   └── XxxClient.tsx (Client) — estado, modales, interactividad
         └── XxxModal.tsx (Client) — formulario con react-hook-form
               └── serverAction() — lib/xxx.ts con 'use server'
@@ -296,7 +387,7 @@ page.tsx (Server) — fetch data
 
 ### 2. Server Actions en lib/
 
-Todos los archivos `lib/*.ts` que hacen mutaciones usan `'use server'` al inicio del archivo. Todas las funciones del archivo deben ser `async`. Las funciones puras (como `getUrgency()`) deben estar en archivos separados SIN `'use server'` — ver `lib/urgency.ts`.
+Todos los archivos `lib/*.ts` que hacen mutaciones usan `'use server'` al inicio del archivo. Todas las funciones del archivo **deben ser `async`**. Las funciones puras deben estar en archivos separados SIN `'use server'`.
 
 ```typescript
 // ✅ Correcto
@@ -310,8 +401,8 @@ export function getUrgency(m: Maintenance) { ... }  // BUILD ERROR
 
 ### 3. Cliente Supabase
 
-- **Server Components / Server Actions:** `import { createClient } from '@/lib/supabase/server'` — usa cookies, `await createClient()`
-- **Client Components (mutaciones desde browser):** `import { createClient } from '@/lib/supabase/client'` — solo en casos necesarios como `HorometroForm`
+- **Server Components / Server Actions:** `import { createClient } from '@/lib/supabase/server'` → `await createClient()`
+- **Client Components (uploads, auth desde browser):** `import { createClient } from '@/lib/supabase/client'` → `createClient()` (sin await)
 - **Middleware:** instancia directa con `createServerClient` de `@supabase/ssr`
 
 ### 4. Obtener perfil del usuario
@@ -321,35 +412,67 @@ export function getUrgency(m: Maintenance) { ... }  // BUILD ERROR
 import { getUserProfile } from '@/lib/auth'
 const profile = await getUserProfile()
 const isAdmin = profile?.role === 'admin'
-
-// getUserProfile() hace:
-// 1. supabase.auth.getUser() → valida JWT en servidor de Supabase
-// 2. .from('profiles').select('full_name, role') → trae rol real
 ```
 
 ### 5. Formularios (modales)
 
 - `react-hook-form` + `zod` + `@hookform/resolvers/zod`
-- Dialog: `@base-ui/react/dialog` — Dialog.Root, Dialog.Portal, Dialog.Backdrop, Dialog.Popup, Dialog.Close
-- **IMPORTANTE:** `Dialog.Close` de `@base-ui` NO soporta `asChild`. El botón Cancelar debe ser `<button onClick={() => onOpenChange(false)}>`, nunca `<Dialog.Close asChild><Button>`.
-- Campos numéricos opcionales usan `z.preprocess` para convertir `""` → `null`
+- Dialog: `import { Dialog } from '@base-ui/react/dialog'`
+  - Usar: `Dialog.Root`, `Dialog.Portal`, `Dialog.Backdrop`, `Dialog.Popup`, `Dialog.Close`, `Dialog.Title`
+- **CRÍTICO:** `Dialog.Close` de `@base-ui` NO soporta `asChild`. El botón Cancelar debe ser `<button onClick={() => onOpenChange(false)}>`, nunca `<Dialog.Close asChild>`.
+- Importación correcta: `@base-ui/react/dialog` (NO `@base-ui-components/react/dialog`)
 
-### 6. Revalidación tras mutaciones
+### 6. Campos numéricos en zod v4
+
+`z.preprocess` da tipo `unknown` como INPUT en zod v4, rompiendo los tipos de `@hookform/resolvers`. Patrón correcto:
+
+```typescript
+// ✅ Correcto para campos numéricos opcionales
+amount: z
+  .any()
+  .transform((v): number | null => {
+    if (v === '' || v === undefined || v === null) return null
+    return Number(v)
+  })
+  .pipe(z.number().positive().nullable())
+  .optional()
+
+// ❌ Rompe el build en producción (Vercel)
+amount: z.preprocess((v) => v === '' ? null : Number(v), z.number().nullable())
+```
+
+### 7. Revalidación tras mutaciones
 
 ```typescript
 import { revalidatePath } from 'next/cache'
 revalidatePath('/maquinaria')  // invalida caché → Server Component re-fetches
 ```
 
-### 7. Campos numéricos nullables
+En Client Components: llamar `router.refresh()` después de mutations con Server Actions que no revalidan automáticamente (uploads en storage seguidos de createDocumentRecord).
+
+### 8. searchParams en page.tsx (Next.js 16)
 
 ```typescript
-// Siempre ?? 0 o ?? null antes de operaciones
-(tank.current_liters ?? 0).toLocaleString('es-CL')
-Math.max(0, (tank.current_liters ?? 0) - input.liters)
+type SearchParams = Promise<{ mes?: string; anio?: string }>
+
+export default async function Page({ searchParams }: { searchParams: SearchParams }) {
+  const params = await searchParams  // DEBE awaitarse
+}
 ```
 
-### 8. Formato de números
+### 9. Supabase join type cast
+
+Supabase infiere resultados de joins como `any[]`. Usar `as unknown as Type[]` en lugar de `as Type[]`:
+
+```typescript
+// ✅ Correcto
+return (data ?? []) as unknown as TankMovement[]
+
+// ❌ Error de TypeScript en builds estrictos
+return (data ?? []) as TankMovement[]
+```
+
+### 10. Formato de números y fechas
 
 ```typescript
 // Pesos chilenos
@@ -357,50 +480,67 @@ n.toLocaleString('es-CL')
 
 // Con decimales
 n.toLocaleString('es-CL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-```
 
-### 9. Fechas (strings, no Date objects)
-
-La DB guarda fechas como `date` (string `YYYY-MM-DD`). Para mostrar:
-```typescript
+// Fechas (DB guarda date como string 'YYYY-MM-DD')
 function formatFecha(d: string) {
   const [y, m, day] = d.split('-')
-  return `${day}/${m}/${y}`  // → DD/MM/YYYY
+  return `${day}/${m}/${y}`
+}
+
+// Fechas con timestamp (created_at es timestamptz)
+function formatFechaTs(d: string) {
+  const [y, m, day] = d.split('T')[0].split('-')
+  return `${day}/${m}/${y}`
 }
 ```
 
-### 10. searchParams en page.tsx (Next.js 16)
+### 11. Uploads a Supabase Storage (desde Client Component)
 
 ```typescript
-type SearchParams = Promise<{ mes?: string; anio?: string }>
+import { createClient } from '@/lib/supabase/client'
 
-export default async function Page({ searchParams }: { searchParams: SearchParams }) {
-  const params = await searchParams  // debe awaitearse
-  ...
-}
+const supabase = createClient()
+const { error } = await supabase.storage
+  .from('facturas')
+  .upload(fileName, file, { upsert: true })
+const { data } = supabase.storage
+  .from('facturas')
+  .getPublicUrl(fileName)
+// data.publicUrl → guardar en DB via Server Action
 ```
+
+### 12. Nombres de columnas críticos (errores históricos)
+
+- `project_machines` usa `start_date` (NO `assigned_date`)
+- `project_costs` usa `cost_date` (NO `date`)
+- Enum `projects.type`: valores DB son `destronque`, `preparacion_suelo`, `tranque`, `obra_civil`, `mixto`
 
 ---
 
 ## Deuda técnica y problemas conocidos
 
-1. **`lib/auth.ts` — `getUser()` duplicado:** `getUserProfile()` es un alias de `getUser()`, ambas hacen lo mismo. Se puede simplificar a una sola función en el futuro.
+1. **`lib/auth.ts` — `getUser()` duplicado:** `getUserProfile()` es un alias de `getUser()`. Se puede simplificar.
 
-2. **`getUrgency` duplicada:** La lógica de semáforo existe en `lib/urgency.ts` (para el módulo Mantenciones) y también inline en `dashboard/page.tsx` como `getFleetUrgency()` porque el shape del tipo `FleetMachine` difiere de `Maintenance`. Considerar unificar el tipo o la función.
+2. **`getUrgency` duplicada:** Lógica de semáforo existe en `lib/urgency.ts` y también inline en `dashboard/page.tsx` como `getFleetUrgency()` (el shape de `FleetMachine` difiere de `Maintenance`).
 
-3. **Stock de combustible no es transaccional:** `createMovement()` hace insert + read + update en secuencia. Sin transacción, dos cargas simultáneas podrían causar race condition en `current_liters`. Mitigar con una RPC en Supabase que haga el cálculo atómico.
+3. **Stock de combustible no es transaccional:** `createMovement()` hace insert + read + update en secuencia. Sin transacción, dos cargas simultáneas pueden causar race condition en `current_liters`. Mitigar con RPC en Supabase.
 
-4. **`checkOverdueMaintenances()` en cada page load:** Se ejecuta en cada visita a `/mantenciones`. En producción con muchas mantenciones, considerar moverlo a un cron job o Supabase Edge Function.
+4. **`checkOverdueMaintenances()` en cada page load:** Se ejecuta en cada visita a `/mantenciones`. En producción considerar moverlo a un cron job.
 
-5. **Sin paginación:** Las tablas de horómetros, movimientos y mantenciones traen todos los registros. Agregar paginación cuando el volumen crezca.
+5. **Sin paginación:** Las tablas de horómetros, movimientos y mantenciones traen todos los registros.
 
-6. **El módulo Horómetros no verifica el rol** en el Server Component — cualquier usuario autenticado puede acceder a `/maquinaria/horometros` aunque no aparezca en el sidebar del operador.
+6. **Módulo Horómetros no verifica rol** en el Server Component — cualquier usuario autenticado puede acceder a `/maquinaria/horometros`.
 
-7. **shadcn UI parcialmente inicializado:** Solo existe `components/ui/button.tsx`. Los demás componentes shadcn (Input, Select, Badge, etc.) no están instalados — se usan elementos HTML nativos con clases Tailwind directas.
+7. **shadcn UI parcialmente inicializado:** Solo existe `components/ui/button.tsx`. Los demás componentes (Input, Select, Badge) no están instalados — se usan elementos HTML nativos con clases Tailwind directas.
 
 ---
 
-## Módulos pendientes
+## Pendientes y próximos pasos
 
-### Calendario operativo
-Vista de calendario que muestre: mantenciones programadas, asignaciones de máquinas a proyectos, alertas. Depende de los módulos de Proyectos y Mantenciones (ya completos).
+| Feature | Tecnología sugerida | Prioridad |
+|---|---|---|
+| Notificaciones por email (mantenciones vencidas, hitos) | Resend | Alta |
+| App mobile para operadores | Expo (React Native) | Alta |
+| Reportes exportables (PDF / Excel) | react-pdf o xlsx | Media |
+| Notificaciones WhatsApp | Twilio | Media |
+| Dominio propio | Vercel Domains / Cloudflare | Baja |

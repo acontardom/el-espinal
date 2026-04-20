@@ -61,7 +61,7 @@ export type ProjectCost = {
   type: CostType
   description: string
   amount: number
-  date: string
+  cost_date: string
   notes: string | null
   created_at: string
 }
@@ -70,7 +70,7 @@ export type ProjectMachine = {
   id: string
   project_id: string
   machine_id: string
-  assigned_date: string
+  start_date: string
   end_date: string | null
   notes: string | null
   created_at: string
@@ -113,14 +113,14 @@ export type ProjectCostInput = {
   type: CostType
   description: string
   amount: number
-  date: string
+  cost_date: string
   notes?: string | null
 }
 
 export type ProjectMachineInput = {
   project_id: string
   machine_id: string
-  assigned_date: string
+  start_date: string
   end_date?: string | null
   notes?: string | null
 }
@@ -196,12 +196,12 @@ export async function getProject(id: string): Promise<ProjectDetail | null> {
       .from('project_costs')
       .select('*')
       .eq('project_id', id)
-      .order('date', { ascending: false }),
+      .order('cost_date', { ascending: false }),
     supabase
       .from('project_machines')
       .select('*, machine:machines(id, code, name, type, status)')
       .eq('project_id', id)
-      .order('assigned_date', { ascending: false }),
+      .order('start_date', { ascending: false }),
   ])
 
   if (projectRes.error || !projectRes.data) return null

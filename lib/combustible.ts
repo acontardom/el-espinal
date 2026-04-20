@@ -31,6 +31,7 @@ export type TankMovement = {
   price_per_liter: number | null
   supplier: string | null
   invoice_number: string | null
+  invoice_image_url: string | null
   notes: string | null
   created_by: string | null
   created_at: string
@@ -57,6 +58,7 @@ export type MovementInput = {
   price_per_liter?: number | null
   supplier?: string | null
   invoice_number?: string | null
+  invoice_image_url?: string | null
   notes?: string | null
 }
 
@@ -113,7 +115,7 @@ export async function getMovements(
     .from('tank_movements')
     .select(
       `id, type, tank_id, machine_id, movement_date, liters, meter_reading,
-       price_per_liter, supplier, invoice_number, notes, created_by, created_at,
+       price_per_liter, supplier, invoice_number, invoice_image_url, notes, created_by, created_at,
        tank:tanks(id, code, name),
        machine:machines(id, code, name)`
     )
@@ -190,7 +192,7 @@ export async function getMyFuelActivity(userId: string): Promise<FuelActivity> {
       .from('tank_movements')
       .select(
         `id, type, tank_id, machine_id, movement_date, liters, meter_reading,
-         price_per_liter, supplier, invoice_number, notes, created_by, created_at,
+         price_per_liter, supplier, invoice_number, invoice_image_url, notes, created_by, created_at,
          tank:tanks(id, code, name),
          machine:machines(id, code, name)`
       )
@@ -224,7 +226,7 @@ export async function getMisMovimientos(
     .from('tank_movements')
     .select(
       `id, type, tank_id, machine_id, movement_date, liters, meter_reading,
-       price_per_liter, supplier, invoice_number, notes, created_by, created_at,
+       price_per_liter, supplier, invoice_number, invoice_image_url, notes, created_by, created_at,
        tank:tanks(id, code, name),
        machine:machines(id, code, name)`
     )

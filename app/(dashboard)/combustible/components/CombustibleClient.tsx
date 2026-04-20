@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Pencil } from 'lucide-react'
+import { Plus, Pencil, Receipt } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
@@ -13,6 +13,7 @@ import {
 } from '@/lib/combustible'
 import { TankModal } from './TankModal'
 import { MovementModal } from './MovementModal'
+import { ImageLightbox } from './ImageLightbox'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -190,7 +191,6 @@ function VistaOperador({
                   <th className="px-4 py-3 font-medium text-zinc-600">Estanque</th>
                   <th className="px-4 py-3 font-medium text-zinc-600">Máquina</th>
                   <th className="px-4 py-3 text-right font-medium text-zinc-600">Litros</th>
-                  <th className="px-4 py-3 text-right font-medium text-zinc-600">Medidor</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
@@ -213,9 +213,6 @@ function VistaOperador({
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-medium text-zinc-900">
                       {fmt(m.liters, 1)}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-zinc-600">
-                      {fmt(m.meter_reading, 1)}
                     </td>
                   </tr>
                 ))}
@@ -256,6 +253,7 @@ export function CombustibleClient({
   const [tankModalOpen, setTankModalOpen] = useState(false)
   const [movementModalOpen, setMovementModalOpen] = useState(false)
   const [selectedTank, setSelectedTank] = useState<Tank | null>(null)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
   // Month filter state (local mirrors for the selector UI)
   const [filterMonth, setFilterMonth] = useState(currentMonth)
@@ -392,8 +390,7 @@ export function CombustibleClient({
                     <th className="px-4 py-3 font-medium text-zinc-600">Estanque</th>
                     <th className="px-4 py-3 font-medium text-zinc-600">Máquina</th>
                     <th className="px-4 py-3 text-right font-medium text-zinc-600">Litros</th>
-                    <th className="px-4 py-3 text-right font-medium text-zinc-600">Medidor</th>
-                    <th className="px-4 py-3 font-medium text-zinc-600">Proveedor</th>
+                    <th className="px-4 py-3 font-medium text-zinc-600">Factura</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
@@ -417,11 +414,18 @@ export function CombustibleClient({
                       <td className="px-4 py-3 text-right tabular-nums font-medium text-zinc-900">
                         {fmt(m.liters, 1)}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-zinc-600">
-                        {fmt(m.meter_reading, 1)}
-                      </td>
-                      <td className="px-4 py-3 text-zinc-600">
-                        {m.supplier ?? <span className="text-zinc-300">—</span>}
+                      <td className="px-4 py-3">
+                        {m.invoice_image_url ? (
+                          <button
+                            onClick={() => setLightboxUrl(m.invoice_image_url!)}
+                            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50 transition"
+                          >
+                            <Receipt size={12} />
+                            Ver factura
+                          </button>
+                        ) : (
+                          <span className="text-zinc-300">—</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -444,6 +448,11 @@ export function CombustibleClient({
         tanks={tanks}
         machines={machines}
       />
+
+      {/* Image lightbox */}
+      {lightboxUrl && (
+        <ImageLightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+      )}
     </>
   )
 }

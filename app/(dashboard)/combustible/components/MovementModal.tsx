@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Dialog } from '@base-ui/react/dialog'
-import { X } from 'lucide-react'
+import { X, Camera, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { createMovement, type Tank, type MachineOption } from '@/lib/combustible'
+import { createClient } from '@/lib/supabase/client'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -35,13 +36,12 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
   const [machineId, setMachineId] = useState('')
   const [fecha, setFecha] = useState(hoy)
   const [litros, setLitros] = useState('')
-  const [medidor, setMedidor] = useState('')
-  const [precioPorLitro, setPrecioPorLitro] = useState('')
-  const [proveedor, setProveedor] = useState('')
-  const [factura, setFactura] = useState('')
-  const [notas, setNotas] = useState('')
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [estado, setEstado] = useState<Estado>('idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Reset al abrir/cerrar
   useEffect(() => {
@@ -51,11 +51,8 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
       setMachineId('')
       setFecha(hoy)
       setLitros('')
-      setMedidor('')
-      setPrecioPorLitro('')
-      setProveedor('')
-      setFactura('')
-      setNotas('')
+      setPhotoFile(null)
+      setPhotoPreview(null)
       setEstado('idle')
       setErrorMsg(null)
     }
@@ -65,6 +62,33 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
   const selectedTank = activeTanks.find((t) => t.id === tankId)
   const isCarga = type === 'carga'
 
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    const url = URL.createObjectURL(file)
+    setPhotoPreview(url)
+  }
+
+  function handleRemovePhoto() {
+    setPhotoFile(null)
+    if (photoPreview) URL.revokeObjectURL(photoPreview)
+    setPhotoPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  async function uploadPhoto(file: File): Promise<string | null> {
+    const supabase = createClient()
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const fileName = `facturas/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+    const { error } = await supabase.storage
+      .from('facturas')
+      .upload(fileName, file, { upsert: true })
+    if (error) throw new Error(error.message)
+    const { data } = supabase.storage.from('facturas').getPublicUrl(fileName)
+    return data.publicUrl
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!tankId || !litros || !fecha) return
@@ -73,27 +97,33 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
     setEstado('loading')
     setErrorMsg(null)
 
-    const result = await createMovement({
-      type,
-      tank_id: tankId,
-      machine_id: isCarga ? null : machineId,
-      movement_date: fecha,
-      liters: parseFloat(litros),
-      meter_reading: medidor ? parseFloat(medidor) : null,
-      price_per_liter: precioPorLitro ? parseFloat(precioPorLitro) : null,
-      supplier: proveedor.trim() || null,
-      invoice_number: factura.trim() || null,
-      notes: notas.trim() || null,
-    })
+    try {
+      let invoiceImageUrl: string | null = null
+      if (isCarga && photoFile) {
+        invoiceImageUrl = await uploadPhoto(photoFile)
+      }
 
-    if (result.error) {
-      setErrorMsg(result.error)
+      const result = await createMovement({
+        type,
+        tank_id: tankId,
+        machine_id: isCarga ? null : machineId,
+        movement_date: fecha,
+        liters: parseFloat(litros),
+        invoice_image_url: invoiceImageUrl,
+      })
+
+      if (result.error) {
+        setErrorMsg(result.error)
+        setEstado('error')
+        return
+      }
+
+      setEstado('success')
+      setTimeout(() => onOpenChange(false), 1200)
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Error inesperado')
       setEstado('error')
-      return
     }
-
-    setEstado('success')
-    setTimeout(() => onOpenChange(false), 1200)
   }
 
   return (
@@ -125,7 +155,7 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
               <p className="text-sm text-zinc-500">El stock del estanque ha sido actualizado.</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4 px-6 py-5">
               {/* Selector de tipo */}
               <div>
                 <p className={labelClass}>Tipo de movimiento</p>
@@ -153,7 +183,7 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
               {/* Estanque */}
               <div>
                 <label htmlFor="tank" className={labelClass}>
-                  Estanque
+                  Estanque <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="tank"
@@ -175,7 +205,10 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
                 </select>
                 {selectedTank && (
                   <p className="mt-1.5 text-xs text-zinc-400">
-                    Stock actual: <span className="font-medium text-zinc-600">{(selectedTank.current_liters ?? 0).toLocaleString('es-CL')} L</span>
+                    Stock actual:{' '}
+                    <span className="font-medium text-zinc-600">
+                      {(selectedTank.current_liters ?? 0).toLocaleString('es-CL')} L
+                    </span>
                     {selectedTank.capacity_liters
                       ? ` / ${selectedTank.capacity_liters.toLocaleString('es-CL')} L`
                       : ''}
@@ -187,7 +220,7 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
               {!isCarga && (
                 <div>
                   <label htmlFor="machine" className={labelClass}>
-                    Máquina
+                    Máquina <span className="text-red-500">*</span>
                   </label>
                   <select
                     id="machine"
@@ -210,7 +243,9 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
               {/* Fecha y litros */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="fecha" className={labelClass}>Fecha</label>
+                  <label htmlFor="fecha" className={labelClass}>
+                    Fecha <span className="text-red-500">*</span>
+                  </label>
                   <input
                     id="fecha"
                     type="date"
@@ -223,7 +258,9 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
                   />
                 </div>
                 <div>
-                  <label htmlFor="litros" className={labelClass}>Litros</label>
+                  <label htmlFor="litros" className={labelClass}>
+                    Litros <span className="text-red-500">*</span>
+                  </label>
                   <input
                     id="litros"
                     type="number"
@@ -240,99 +277,51 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
                 </div>
               </div>
 
-              {/* Lectura medidor */}
-              <div>
-                <label htmlFor="medidor" className={labelClass}>
-                  Lectura medidor{' '}
-                  <span className="font-normal text-zinc-400">(opcional)</span>
-                </label>
-                <input
-                  id="medidor"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  min="0"
-                  value={medidor}
-                  onChange={(e) => setMedidor(e.target.value)}
-                  placeholder="0.00"
-                  disabled={estado === 'loading'}
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Campos solo carga */}
+              {/* Foto de factura (solo carga) */}
               {isCarga && (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label htmlFor="precio" className={labelClass}>
-                        Precio / litro{' '}
-                        <span className="font-normal text-zinc-400">(opc.)</span>
-                      </label>
-                      <input
-                        id="precio"
-                        type="number"
-                        inputMode="decimal"
-                        step="0.01"
-                        min="0"
-                        value={precioPorLitro}
-                        onChange={(e) => setPrecioPorLitro(e.target.value)}
-                        placeholder="0.00"
-                        disabled={estado === 'loading'}
-                        className={inputClass}
+                <div>
+                  <p className={labelClass}>
+                    Foto de factura{' '}
+                    <span className="font-normal text-zinc-400">(opcional)</span>
+                  </p>
+                  {photoPreview ? (
+                    <div className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photoPreview}
+                        alt="Vista previa factura"
+                        className="h-40 w-full rounded-xl border border-zinc-200 object-contain bg-zinc-50"
                       />
-                    </div>
-                    <div>
-                      <label htmlFor="factura" className={labelClass}>
-                        N° factura{' '}
-                        <span className="font-normal text-zinc-400">(opc.)</span>
-                      </label>
-                      <input
-                        id="factura"
-                        type="text"
-                        value={factura}
-                        onChange={(e) => setFactura(e.target.value)}
-                        placeholder="001-123456"
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
                         disabled={estado === 'loading'}
-                        className={inputClass}
-                      />
+                        className="absolute right-2 top-2 rounded-full bg-white p-1 shadow-md text-zinc-500 hover:text-red-500 transition"
+                      >
+                        <X size={14} />
+                      </button>
                     </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="proveedor" className={labelClass}>
-                      Proveedor{' '}
-                      <span className="font-normal text-zinc-400">(opcional)</span>
-                    </label>
-                    <input
-                      id="proveedor"
-                      type="text"
-                      value={proveedor}
-                      onChange={(e) => setProveedor(e.target.value)}
-                      placeholder="COPEC, ENEX..."
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
                       disabled={estado === 'loading'}
-                      className={inputClass}
-                    />
-                  </div>
-                </>
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 bg-zinc-50 px-4 py-6 text-sm text-zinc-500 transition hover:border-zinc-400 hover:bg-zinc-100 disabled:opacity-50"
+                    >
+                      <Camera size={18} />
+                      Adjuntar foto de factura
+                    </button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+                </div>
               )}
-
-              {/* Notas */}
-              <div>
-                <label htmlFor="notas" className={labelClass}>
-                  Notas{' '}
-                  <span className="font-normal text-zinc-400">(opcional)</span>
-                </label>
-                <textarea
-                  id="notas"
-                  value={notas}
-                  onChange={(e) => setNotas(e.target.value)}
-                  rows={2}
-                  placeholder="Observaciones..."
-                  disabled={estado === 'loading'}
-                  className={cn(inputClass, 'resize-none text-sm')}
-                />
-              </div>
 
               {errorMsg && (
                 <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -346,11 +335,12 @@ export function MovementModal({ open, onOpenChange, tanks, machines }: Props) {
                   type="button"
                   onClick={() => onOpenChange(false)}
                   disabled={estado === 'loading'}
-                  className="inline-flex h-8 items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
+                  className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <Button type="submit" disabled={estado === 'loading'}>
+                  {estado === 'loading' && <Loader2 size={15} className="animate-spin" />}
                   {estado === 'loading' ? 'Guardando...' : 'Guardar movimiento'}
                 </Button>
               </div>

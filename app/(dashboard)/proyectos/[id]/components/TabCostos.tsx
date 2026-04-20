@@ -36,7 +36,7 @@ const schema = z.object({
       return Number(v)
     })
     .pipe(z.number().positive('El monto debe ser mayor a 0')),
-  date: z.string().min(1, 'Requerido'),
+  cost_cost_date: z.string().min(1, 'Requerido'),
   notes: z.string().nullable().optional(),
 })
 
@@ -72,7 +72,7 @@ export function TabCostos({ costs, projectId, contractAmount }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { date: new Date().toISOString().split('T')[0] },
+    defaultValues: { cost_date: new Date().toISOString().split('T')[0] },
   })
 
   async function onSubmit(data: FormData) {
@@ -81,12 +81,12 @@ export function TabCostos({ costs, projectId, contractAmount }: Props) {
       type: data.type,
       description: data.description,
       amount: data.amount as number,
-      date: data.date,
+      cost_date: data.cost_date,
       notes: data.notes || null,
     })
     if (res.error) { setError('root', { message: res.error }); return }
     setCreateOpen(false)
-    reset({ date: new Date().toISOString().split('T')[0] })
+    reset({ cost_date: new Date().toISOString().split('T')[0] })
   }
 
   async function handleDelete(id: string) {
@@ -166,7 +166,7 @@ export function TabCostos({ costs, projectId, contractAmount }: Props) {
                 const cfg = costTypeConfig[c.type]
                 return (
                   <tr key={c.id} className="hover:bg-zinc-50">
-                    <td className="px-4 py-3 tabular-nums text-zinc-600">{formatFecha(c.date)}</td>
+                    <td className="px-4 py-3 tabular-nums text-zinc-600">{formatFecha(c.cost_date)}</td>
                     <td className="px-4 py-3">
                       <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium', cfg.style)}>
                         {cfg.label}
@@ -224,8 +224,8 @@ export function TabCostos({ costs, projectId, contractAmount }: Props) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-zinc-700">Fecha <span className="text-red-500">*</span></label>
-                  <input {...register('date')} type="date" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200" />
-                  {errors.date && <p className="mt-1 text-xs text-red-600">{errors.date.message}</p>}
+                  <input {...register('cost_date')} type="cost_date" className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200" />
+                  {errors.cost_date && <p className="mt-1 text-xs text-red-600">{errors.cost_date.message}</p>}
                 </div>
               </div>
               <div>

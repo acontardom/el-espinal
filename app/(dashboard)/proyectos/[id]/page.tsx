@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 import { getProject, getMachineOptions } from '@/lib/proyectos'
 import { getClients } from '@/lib/clientes'
+import { getDocuments } from '@/lib/documentos'
+import { getUserProfile } from '@/lib/auth'
 import { ProyectoDetailClient } from './components/ProyectoDetailClient'
 
 type Props = {
@@ -12,13 +14,17 @@ type Props = {
 export default async function ProyectoDetailPage({ params }: Props) {
   const { id } = await params
 
-  const [project, machineOptions, clients] = await Promise.all([
+  const [project, machineOptions, clients, profile, documents] = await Promise.all([
     getProject(id),
     getMachineOptions(),
     getClients(),
+    getUserProfile(),
+    getDocuments(id),
   ])
 
   if (!project) notFound()
+
+  const isAdmin = profile?.role === 'admin'
 
   return (
     <div className="space-y-2">
@@ -51,6 +57,8 @@ export default async function ProyectoDetailPage({ params }: Props) {
         project={project}
         machineOptions={machineOptions}
         clients={clients}
+        isAdmin={isAdmin}
+        documents={documents}
       />
     </div>
   )

@@ -50,15 +50,12 @@ type Props = {
   clients: ClientWithStats[]
 }
 
-const PROJECT_TYPES = [
-  'Movimiento de tierras',
-  'Nivelación',
-  'Excavación',
-  'Relleno',
-  'Demolición',
-  'Construcción',
-  'Pavimentación',
-  'Otro',
+const PROJECT_TYPES: { value: string; label: string }[] = [
+  { value: 'destronque',        label: 'Destronque' },
+  { value: 'preparacion_suelo', label: 'Preparación de suelo' },
+  { value: 'tranque',           label: 'Tranque' },
+  { value: 'obra_civil',        label: 'Obra civil' },
+  { value: 'mixto',             label: 'Mixto' },
 ]
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -189,7 +186,7 @@ export function ProjectModal({ open, onOpenChange, project, clients }: Props) {
                 >
                   <option value="">Seleccionar tipo...</option>
                   {PROJECT_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
+                    <option key={t.value} value={t.value}>{t.label}</option>
                   ))}
                 </select>
                 {errors.type && (
