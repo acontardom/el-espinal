@@ -80,6 +80,14 @@ export function HorometroForm({ maquinas, onGuardado, onCancelar }: Props) {
     }
 
     setEstado('success')
+
+    // Fire-and-forget notification check
+    fetch('/api/notifications/maintenance-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ machine_id: machineId, current_hours: lecturaNum }),
+    }).catch(() => {})
+
     setTimeout(() => {
       onGuardado()
     }, 1200)

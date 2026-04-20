@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from './supabase/server'
+import { triggerFuelMovementNotification } from './notifications/triggers'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -138,10 +139,12 @@ export async function createMovement(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'No hay sesión activa.' }
 
-  // Insertar movimiento
-  const { error: insertError } = await supabase
+  // Insertar movimiento y obtener ID para notificación
+  const { data: newMovement, error: insertError } = await supabase
     .from('tank_movements')
     .insert([{ ...input, created_by: user.id }])
+    .select('id')
+    .single()
 
   if (insertError) return { error: insertError.message }
 
@@ -165,6 +168,12 @@ export async function createMovement(
   }
 
   revalidatePath('/combustible')
+
+  // Fire-and-forget notification
+  if (newMovement?.id) {
+    triggerFuelMovementNotification(newMovement.id).catch(() => {})
+  }
+
   return {}
 }
 

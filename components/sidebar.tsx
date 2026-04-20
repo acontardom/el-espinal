@@ -12,6 +12,7 @@ import {
   FolderKanban,
   Users,
   CalendarDays,
+  Settings,
   Menu,
   X,
 } from 'lucide-react'
@@ -33,6 +34,7 @@ const adminNavItems: NavItem[] = [
   { href: '/proyectos',             label: 'Proyectos',            icon: FolderKanban,    indent: false },
   { href: '/clientes',              label: 'Clientes',             icon: Users,           indent: false },
   { href: '/calendario',            label: 'Calendario',           icon: CalendarDays,    indent: false },
+  { href: '/configuracion',         label: 'Configuración',        icon: Settings,        indent: false },
 ]
 
 const operadorNavItems: NavItem[] = [
