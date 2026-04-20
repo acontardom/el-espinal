@@ -2,7 +2,6 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from './supabase/server'
-import { triggerFuelMovementNotification } from './notifications/triggers'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -168,12 +167,6 @@ export async function createMovement(
   }
 
   revalidatePath('/combustible')
-
-  // Fire-and-forget notification
-  if (newMovement?.id) {
-    triggerFuelMovementNotification(newMovement.id).catch(() => {})
-  }
-
   return {}
 }
 
