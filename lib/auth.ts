@@ -5,7 +5,7 @@ export type UserProfile = {
   id: string
   email: string
   full_name: string | null
-  role: 'admin' | 'operador'
+  role: 'superadmin' | 'admin' | 'operador'
 }
 
 export async function getUser(): Promise<UserProfile | null> {

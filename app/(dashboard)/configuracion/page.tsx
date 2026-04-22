@@ -6,7 +6,7 @@ import { NotificationCard } from './components/NotificationCard'
 
 export default async function ConfiguracionPage() {
   const profile = await getUserProfile()
-  if (profile?.role !== 'admin') redirect('/dashboard')
+  if (profile?.role !== 'admin' && profile?.role !== 'superadmin') redirect('/dashboard')
 
   const settings = await getNotificationSettings()
 

@@ -23,7 +23,7 @@ export default async function MantencionesPage() {
       pending={pending}
       history={history}
       machines={machines}
-      isAdmin={profile?.role === 'admin'}
+      isAdmin={profile?.role === 'admin' || profile?.role === 'superadmin'}
     />
   )
 }

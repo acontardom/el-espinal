@@ -13,6 +13,7 @@ import {
   Users,
   CalendarDays,
   Settings,
+  UserCog,
   Menu,
   X,
 } from 'lucide-react'
@@ -37,6 +38,11 @@ const adminNavItems: NavItem[] = [
   { href: '/configuracion',         label: 'Configuración',        icon: Settings,        indent: false },
 ]
 
+const superadminNavItems: NavItem[] = [
+  ...adminNavItems,
+  { href: '/usuarios',              label: 'Usuarios',             icon: UserCog,         indent: false },
+]
+
 const operadorNavItems: NavItem[] = [
   { href: '/dashboard',             label: 'Dashboard',            icon: LayoutDashboard, indent: false },
   { href: '/maquinaria/horometros', label: 'Horómetros',           icon: Gauge,           indent: false },
@@ -44,13 +50,16 @@ const operadorNavItems: NavItem[] = [
 ]
 
 type Props = {
-  role: 'admin' | 'operador'
+  role: 'superadmin' | 'admin' | 'operador'
 }
 
 export function Sidebar({ role }: Props) {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
-  const navItems = role === 'admin' ? adminNavItems : operadorNavItems
+  const navItems =
+    role === 'superadmin' ? superadminNavItems :
+    role === 'admin'      ? adminNavItems :
+                            operadorNavItems
 
   return (
     <>

@@ -8,5 +8,5 @@ export default async function MaquinariaPage() {
     getUserProfile(),
   ])
 
-  return <MachineTable machines={machines} isAdmin={profile?.role === 'admin'} />
+  return <MachineTable machines={machines} isAdmin={profile?.role === 'admin' || profile?.role === 'superadmin'} />
 }

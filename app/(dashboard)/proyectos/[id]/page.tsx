@@ -24,7 +24,7 @@ export default async function ProyectoDetailPage({ params }: Props) {
 
   if (!project) notFound()
 
-  const isAdmin = profile?.role === 'admin'
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin'
 
   return (
     <div className="space-y-2">

@@ -20,7 +20,7 @@ export default async function CombustiblePage({
   const year = parseInt(params.anio ?? '') || now.getFullYear()
 
   const profile = await getUserProfile()
-  const isAdmin = profile?.role === 'admin'
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin'
 
   if (isAdmin) {
     const [tanks, movements, machines] = await Promise.all([

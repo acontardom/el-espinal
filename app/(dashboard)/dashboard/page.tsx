@@ -207,7 +207,7 @@ export default async function DashboardPage() {
   const profile = await getUserProfile()
 
   // ── Vista operador ──
-  if (profile?.role !== 'admin') {
+  if (profile?.role !== 'admin' && profile?.role !== 'superadmin') {
     const [horometros, cumplimiento, fuelActivity] = await Promise.all([
       getMisHorometros(profile!.id),
       getCumplimiento(30),
