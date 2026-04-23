@@ -112,7 +112,7 @@ function DashboardOperador({
       {/* Acciones rápidas */}
       <div className="grid gap-4 sm:grid-cols-2">
         <Link
-          href="/maquinaria/horometros"
+          href="/maquinaria/horometros/nuevo"
           className="group flex items-center gap-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:border-zinc-300 hover:shadow-md"
         >
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-white group-hover:bg-zinc-700 transition-colors">
@@ -127,17 +127,15 @@ function DashboardOperador({
         </Link>
 
         <Link
-          href="/combustible"
+          href="/combustible/operador"
           className="group flex items-center gap-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:border-zinc-300 hover:shadow-md"
         >
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-white group-hover:bg-zinc-700 transition-colors">
             <Fuel size={28} strokeWidth={1.5} />
           </div>
           <div>
-            <p className="text-lg font-semibold text-zinc-900">Registrar combustible</p>
-            <p className="mt-0.5 text-sm text-zinc-500">
-              Registra cargas y descargas de estanques
-            </p>
+            <p className="text-lg font-semibold text-zinc-900">Cargar o Descargar</p>
+            <p className="mt-0.5 text-sm text-zinc-500">Combustible</p>
           </div>
         </Link>
       </div>

@@ -240,6 +240,33 @@ export async function getMisMovimientos(
   return (data ?? []) as unknown as TankMovement[]
 }
 
+// ─── Direct fuel entries ──────────────────────────────────────────────────────
+// Requiere tabla: direct_fuel_entries (id, machine_id, movement_date, liters,
+//   invoice_image_url, notes, created_by, created_at)
+
+export type DirectFuelEntryInput = {
+  machine_id: string
+  entry_date: string
+  liters: number
+  invoice_image_url?: string | null
+  notes?: string | null
+}
+
+export async function createDirectFuelEntry(
+  input: DirectFuelEntryInput
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'No hay sesión activa.' }
+  const { error } = await supabase
+    .from('direct_fuel_entries')
+    .insert([{ ...input, created_by: user.id }])
+  if (error) return { error: error.message }
+  return {}
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 export async function getMachinesForCombustible(): Promise<MachineOption[]> {

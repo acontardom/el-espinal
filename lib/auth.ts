@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import { createClient } from './supabase/server'
 
 export type UserProfile = {
@@ -37,9 +36,3 @@ export async function getUserProfile(): Promise<UserProfile | null> {
   return getUser()
 }
 
-export async function logout() {
-  'use server'
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  redirect('/login')
-}

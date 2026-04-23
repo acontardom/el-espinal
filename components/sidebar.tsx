@@ -44,9 +44,9 @@ const superadminNavItems: NavItem[] = [
 ]
 
 const operadorNavItems: NavItem[] = [
-  { href: '/dashboard',             label: 'Dashboard',            icon: LayoutDashboard, indent: false },
-  { href: '/maquinaria/horometros', label: 'Horómetros',           icon: Gauge,           indent: false },
-  { href: '/combustible',           label: 'Registrar combustible', icon: Fuel,           indent: false },
+  { href: '/dashboard',             label: 'Dashboard',  icon: LayoutDashboard, indent: false },
+  { href: '/maquinaria/horometros', label: 'Horómetros', icon: Gauge,           indent: false },
+  { href: '/combustible/operador',  label: 'Combustible', icon: Fuel,           indent: false },
 ]
 
 type Props = {
