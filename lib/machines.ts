@@ -17,6 +17,8 @@ export type Machine = {
   current_hours: number | null
   maintenance_interval_hours: number | null
   last_maintenance_hours: number | null
+  fuel_standard_lh: number | null
+  daily_hours_target: number | null
   notes: string | null
   created_at: string
 }
@@ -32,6 +34,8 @@ export type MachineInput = {
   current_hours?: number | null
   maintenance_interval_hours?: number | null
   last_maintenance_hours?: number | null
+  fuel_standard_lh?: number | null
+  daily_hours_target?: number | null
   notes?: string | null
 }
 

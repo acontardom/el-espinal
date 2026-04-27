@@ -45,6 +45,8 @@ const schema = z.object({
   current_hours: nullableNum,
   maintenance_interval_hours: nullableNum,
   last_maintenance_hours: nullableNum,
+  fuel_standard_lh: nullableNum,
+  daily_hours_target: nullableNum,
   notes: z.string().optional(),
 })
 
@@ -107,6 +109,8 @@ export function MachineModal({ open, onOpenChange, machine }: Props) {
       current_hours: undefined,
       maintenance_interval_hours: undefined,
       last_maintenance_hours: undefined,
+      fuel_standard_lh: undefined,
+      daily_hours_target: 10 as unknown as undefined,
       notes: '',
     },
   })
@@ -130,6 +134,8 @@ export function MachineModal({ open, onOpenChange, machine }: Props) {
                 machine.maintenance_interval_hours ?? undefined,
               last_maintenance_hours:
                 machine.last_maintenance_hours ?? undefined,
+              fuel_standard_lh: machine.fuel_standard_lh ?? undefined,
+              daily_hours_target: (machine.daily_hours_target ?? 10) as unknown as undefined,
               notes: machine.notes ?? '',
             }
           : {
@@ -143,6 +149,8 @@ export function MachineModal({ open, onOpenChange, machine }: Props) {
               current_hours: undefined,
               maintenance_interval_hours: undefined,
               last_maintenance_hours: undefined,
+              fuel_standard_lh: undefined,
+              daily_hours_target: 10 as unknown as undefined,
               notes: '',
             }
       )
@@ -319,6 +327,37 @@ export function MachineModal({ open, onOpenChange, machine }: Props) {
                   disabled={isSubmitting}
                 />
               </Field>
+
+              {/* Parámetros técnicos — full width */}
+              <div className="col-span-2">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                  Parámetros técnicos
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Consumo estándar (L/hora)" error={errors.fuel_standard_lh?.message}>
+                    <input
+                      {...register('fuel_standard_lh')}
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      placeholder="Ej: 18.5 — según ficha técnica del fabricante"
+                      className={cn(inputClass, errors.fuel_standard_lh && 'border-red-400')}
+                      disabled={isSubmitting}
+                    />
+                  </Field>
+                  <Field label="Meta horas/día" error={errors.daily_hours_target?.message}>
+                    <input
+                      {...register('daily_hours_target')}
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      placeholder="Ej: 10"
+                      className={cn(inputClass, errors.daily_hours_target && 'border-red-400')}
+                      disabled={isSubmitting}
+                    />
+                  </Field>
+                </div>
+              </div>
 
               {/* Notas — full width */}
               <div className="col-span-2">

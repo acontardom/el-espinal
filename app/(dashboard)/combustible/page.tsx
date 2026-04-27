@@ -1,8 +1,8 @@
 import {
   getTanks,
-  getMovements,
   getMisMovimientos,
   getMachinesForCombustible,
+  getMovementsUnified,
 } from '@/lib/combustible'
 import { getUserProfile } from '@/lib/auth'
 import { CombustibleClient } from './components/CombustibleClient'
@@ -23,15 +23,15 @@ export default async function CombustiblePage({
   const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin'
 
   if (isAdmin) {
-    const [tanks, movements, machines] = await Promise.all([
+    const [tanks, unifiedMovements, machines] = await Promise.all([
       getTanks(),
-      getMovements(month, year),
+      getMovementsUnified(month, year),
       getMachinesForCombustible(),
     ])
     return (
       <CombustibleClient
         tanks={tanks}
-        movements={movements}
+        unifiedMovements={unifiedMovements}
         machines={machines}
         isAdmin={true}
         currentMonth={month}

@@ -241,7 +241,7 @@ export async function getMisMovimientos(
 }
 
 // ─── Direct fuel entries ──────────────────────────────────────────────────────
-// Requiere tabla: direct_fuel_entries (id, machine_id, movement_date, liters,
+// Tabla: direct_fuel_entries (id, machine_id, entry_date, liters,
 //   invoice_image_url, notes, created_by, created_at)
 
 export type DirectFuelEntryInput = {
@@ -250,6 +250,17 @@ export type DirectFuelEntryInput = {
   liters: number
   invoice_image_url?: string | null
   notes?: string | null
+}
+
+export type DirectFuelEntry = {
+  id: string
+  machine_id: string
+  entry_date: string
+  liters: number
+  invoice_image_url: string | null
+  created_by: string | null
+  created_at: string
+  machine: { id: string; code: string; name: string } | null
 }
 
 export async function createDirectFuelEntry(
@@ -265,6 +276,109 @@ export async function createDirectFuelEntry(
     .insert([{ ...input, created_by: user.id }])
   if (error) return { error: error.message }
   return {}
+}
+
+export async function getDirectFuelEntries(
+  month: number,
+  year: number
+): Promise<DirectFuelEntry[]> {
+  const supabase = await createClient()
+  const desde = `${year}-${String(month).padStart(2, '0')}-01`
+  const lastDay = new Date(year, month, 0).getDate()
+  const hasta = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+  const { data, error } = await supabase
+    .from('direct_fuel_entries')
+    .select('*, machine:machines(id, code, name)')
+    .gte('entry_date', desde)
+    .lte('entry_date', hasta)
+    .order('entry_date', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as unknown as DirectFuelEntry[]
+}
+
+// ─── Unified movements ────────────────────────────────────────────────────────
+
+export type UnifiedMovement = {
+  id: string
+  source: 'tank' | 'direct'
+  date: string
+  type: 'carga' | 'descarga' | 'directa'
+  tank: { id: string; code: string; name: string } | null
+  machine: { id: string; code: string; name: string } | null
+  liters: number
+  invoice_image_url: string | null
+  created_at: string
+}
+
+export async function getMovementsUnified(
+  month: number,
+  year: number
+): Promise<UnifiedMovement[]> {
+  const supabase = await createClient()
+  const desde = `${year}-${String(month).padStart(2, '0')}-01`
+  const lastDay = new Date(year, month, 0).getDate()
+  const hasta = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+  const [tankRes, directRes] = await Promise.all([
+    supabase
+      .from('tank_movements')
+      .select(
+        `id, type, movement_date, liters, invoice_image_url, created_at,
+         tank:tanks(id, code, name), machine:machines(id, code, name)`
+      )
+      .gte('movement_date', desde)
+      .lte('movement_date', hasta),
+    supabase
+      .from('direct_fuel_entries')
+      .select(`id, entry_date, liters, invoice_image_url, created_at,
+               machine:machines(id, code, name)`)
+      .gte('entry_date', desde)
+      .lte('entry_date', hasta),
+  ])
+
+  if (tankRes.error) throw new Error(tankRes.error.message)
+  if (directRes.error) throw new Error(directRes.error.message)
+
+  const tankMapped: UnifiedMovement[] = ((tankRes.data ?? []) as unknown as {
+    id: string; type: string; movement_date: string; liters: number
+    invoice_image_url: string | null; created_at: string
+    tank: { id: string; code: string; name: string } | null
+    machine: { id: string; code: string; name: string } | null
+  }[]).map((m) => ({
+    id: m.id,
+    source: 'tank' as const,
+    date: m.movement_date,
+    type: m.type as 'carga' | 'descarga',
+    tank: m.tank ?? null,
+    machine: m.machine ?? null,
+    liters: m.liters,
+    invoice_image_url: m.invoice_image_url ?? null,
+    created_at: m.created_at,
+  }))
+
+  const directMapped: UnifiedMovement[] = ((directRes.data ?? []) as unknown as {
+    id: string; entry_date: string; liters: number
+    invoice_image_url: string | null; created_at: string
+    machine: { id: string; code: string; name: string } | null
+  }[]).map((m) => ({
+    id: m.id,
+    source: 'direct' as const,
+    date: m.entry_date,
+    type: 'directa' as const,
+    tank: null,
+    machine: m.machine ?? null,
+    liters: m.liters,
+    invoice_image_url: m.invoice_image_url ?? null,
+    created_at: m.created_at,
+  }))
+
+  return [...tankMapped, ...directMapped].sort((a, b) => {
+    const d = b.date.localeCompare(a.date)
+    return d !== 0 ? d : b.created_at.localeCompare(a.created_at)
+  })
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
